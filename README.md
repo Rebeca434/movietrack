@@ -9,9 +9,8 @@ Movie tracking app built with React.
   -Watching
   -Watched
 
--Top 3 favorite movies
+-Select favorite movies
 
--Persistent data using localStorage
 
 ## Tech Stack
 -React
