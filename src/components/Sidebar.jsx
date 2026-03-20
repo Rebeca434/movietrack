@@ -24,9 +24,6 @@ function Sidebar({ view, setView, counts }) {
         >
           <span className="sidebar-btn-icon">{icon}</span>
           <span className="sidebar-btn-label">{label}</span>
-          {id !== "all" && (
-            <span className="sidebar-btn-count">{counts[id]}</span>
-        )}
         </button>
       ))}
     </div>

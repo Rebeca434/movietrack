@@ -5,15 +5,16 @@ import Sidebar from "./components/Sidebar";
 import { FaHome } from "react-icons/fa";
 
 const VIEW_LABELS = {
-  all:      { title: "All Movies",      desc: (n) => `Movies in your collection` },
-  want:     { title: "Want to Watch",   desc: (n) => `${n} movies on your watchlist` },
-  watching: { title: "Watching",        desc: (n) => `${n} movies in progress` },
-  watched:  { title: "Watched",         desc: (n) => `${n} movies you've seen` },
-  top:      { title: "Favorites",           desc: (n) => `Your ${n} favourite picks` },
+  all:      { title: "All Movies",    desc: () => `Popular movies` },
+  want:     { title: "Want to Watch", desc: (n) => `${n} movies on your watchlist` },
+  watching: { title: "Watching",      desc: (n) => `${n} movies in progress` },
+  watched:  { title: "Watched",       desc: (n) => `${n} movies you've seen` },
+  top:      { title: "Favorites",     desc: (n) => `${n} favorite picks` },
 };
 
 function App() {
   const [movies, setMovies] = useState([]);
+  const [savedMovies, setSavedMovies] = useState([]);
   const [search, setSearch] = useState("");
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [movieStatus, setMovieStatus] = useState({});
@@ -24,8 +25,10 @@ function App() {
   useEffect(() => {
     const savedStatus = localStorage.getItem("movieStatus");
     const savedTop = localStorage.getItem("topFavorites");
+    const savedMoviesData = localStorage.getItem("savedMovies");
     if (savedStatus) setMovieStatus(JSON.parse(savedStatus));
     if (savedTop) setTopFavorites(JSON.parse(savedTop));
+    if (savedMoviesData) setSavedMovies(JSON.parse(savedMoviesData));
   }, []);
 
   // Load popular movies
@@ -54,51 +57,47 @@ function App() {
       delete updated[movie.id];
     } else {
       updated[movie.id] = status;
+      setSavedMovies(prev => {
+        const exists = prev.find(m => m.id === movie.id);
+        const newSaved = exists ? prev : [...prev, movie];
+        localStorage.setItem("savedMovies", JSON.stringify(newSaved)); // 👈 esta línea
+        return newSaved;
+      });
     }
     setMovieStatus(updated);
     localStorage.setItem("movieStatus", JSON.stringify(updated));
   };
 
- const toggleTop = (movie) => {
-  const exists = topFavorites.find((m) => m.id === movie.id);
-  let updated;
-  if (exists) {
-    updated = topFavorites.filter((m) => m.id !== movie.id);
-  } else {
-    updated = [...topFavorites, movie];
-  }
-  setTopFavorites(updated);
-  localStorage.setItem("topFavorites", JSON.stringify(updated));
-};
+  const toggleTop = (movie) => {
+    const exists = topFavorites.find((m) => m.id === movie.id);
+    let updated;
+    if (exists) {
+      updated = topFavorites.filter((m) => m.id !== movie.id);
+    } else {
+      updated = [...topFavorites, movie];
+    }
+    setTopFavorites(updated);
+    localStorage.setItem("topFavorites", JSON.stringify(updated));
+  };
 
   // useMemo: recalcula filtered solo cuando cambian movies, topFavorites, movieStatus o view
   const filtered = useMemo(() => {
     if (view === "all") return movies;
     if (view === "top") return topFavorites;
-    const base = [...movies, ...topFavorites];
+    const base = [...movies, ...savedMovies, ...topFavorites];
     const unique = Array.from(new Map(base.map((m) => [m.id, m])).values());
     return unique.filter((m) => movieStatus[m.id] === view);
-  }, [movies, topFavorites, movieStatus, view]);
+  }, [movies,savedMovies, topFavorites, movieStatus, view]);
 
-  // useMemo: recalcula contadores solo cuando cambian los datos relevantes
-  const counts = useMemo(() => ({
-    all:      movies.length,
-    want:     Object.values(movieStatus).filter((s) => s === "want").length,
-    watching: Object.values(movieStatus).filter((s) => s === "watching").length,
-    watched:  Object.values(movieStatus).filter((s) => s === "watched").length,
-    top:      topFavorites.length,
-  }), [movies, movieStatus, topFavorites]);
   const { title, desc } = VIEW_LABELS[view] || VIEW_LABELS.all;
 
   return (
     <div className="layout">
-      <Sidebar view={view} setView={setView} counts={counts} />
+      <Sidebar view={view} setView={setView} />
 
       <main className="main">
-        {/* TOP BAR */}
         <div className="top-bar">
           <div className="search-wrapper">
-            <span className="search-icon"></span>
             <input
               type="text"
               placeholder="Search movies..."
@@ -113,16 +112,14 @@ function App() {
           </button>
         </div>
 
-        {/* PAGE HEADER */}
         <div className="page-header">
           <h1>{title}</h1>
           <p>{desc(filtered.length)}</p>
         </div>
 
-        {/* GRID */}
         {filtered.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-state-icon"></div>
+            <div className="empty-state-icon">🎬</div>
             <p>No movies here yet</p>
           </div>
         ) : (
@@ -142,7 +139,6 @@ function App() {
         )}
       </main>
 
-      {/* MODAL */}
       {selectedMovie && (
         <div className="modal-overlay" onClick={() => setSelectedMovie(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>

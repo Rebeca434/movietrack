@@ -67,10 +67,10 @@ function MovieCard({ movie, setStatus, currentStatus, toggleTop, isTop, onSelect
 
           {open && (
             <div className="dropdown-menu">
-              <button className="opt-want"     onClick={(e) => handleSetStatus(e, "want")}>     🕐 Want to Watch</button>
-              <button className="opt-watching" onClick={(e) => handleSetStatus(e, "watching")}> 👁 Watching</button>
-              <button className="opt-watched"  onClick={(e) => handleSetStatus(e, "watched")}>  ✓ Watched</button>
-              <button                          onClick={(e) => handleSetStatus(e, "")}>         ✕ Clear</button>
+              <button className="opt-want"     onClick={(e) => handleSetStatus(e, "want")}>     Want to Watch</button>
+              <button className="opt-watching" onClick={(e) => handleSetStatus(e, "watching")}> Watching</button>
+              <button className="opt-watched"  onClick={(e) => handleSetStatus(e, "watched")}>  Watched</button>
+              <button                          onClick={(e) => handleSetStatus(e, "")}>         Clear</button>
             </div>
           )}
         </div>
