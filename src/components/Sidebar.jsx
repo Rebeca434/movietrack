@@ -1,4 +1,4 @@
-function Sidebar({ view, setView, counts }) {
+function Sidebar({ view, setView}) {
   const navItems = [
     { id: "all",      icon: "⊞", label: "All Movies" },
     { id: "want",     icon: "◷", label: "Want to Watch" },

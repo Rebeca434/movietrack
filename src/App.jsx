@@ -20,6 +20,8 @@ function App() {
   const [movieStatus, setMovieStatus] = useState({});
   const [topFavorites, setTopFavorites] = useState([]);
   const [view, setView] = useState("all");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   // Load localStorage
   useEffect(() => {
@@ -33,23 +35,42 @@ function App() {
 
   // Load popular movies
   useEffect(() => {
-    getPopularMovies().then((data) => {
-      setMovies(data);
-    });
+    setLoading(true);
+    getPopularMovies()
+      .then((data) => setMovies(data))
+      .catch(() => setError("Failed to load movies."))
+      .finally(() => setLoading(false));
   }, []);
 
   const handleSearch = async () => {
     if (!search.trim()) return;
-    const data = await searchMovies(search);
-    setMovies(data);
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await searchMovies(search);
+      setMovies(data);
+    } catch (err) {
+      setError("Can not perform search. Please try again.");
+    } finally {
+      setLoading(false);
+    } 
   };
 
   const handleReset = async () => {
-    const data = await getPopularMovies();
-    setMovies(data);
-    setSearch("");
-    setView("all");
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getPopularMovies();
+      setMovies(data);
+      setSearch("");
+      setView("all");
+    } catch (err) {
+      setError("Failed to reset movies.");
+    } finally {
+      setLoading(false);
+    }
   };
+
 
   const setStatus = (movie, status) => {
     const updated = { ...movieStatus };
@@ -60,7 +81,7 @@ function App() {
       setSavedMovies(prev => {
         const exists = prev.find(m => m.id === movie.id);
         const newSaved = exists ? prev : [...prev, movie];
-        localStorage.setItem("savedMovies", JSON.stringify(newSaved)); // 👈 esta línea
+        localStorage.setItem("savedMovies", JSON.stringify(newSaved)); 
         return newSaved;
       });
     }
@@ -117,26 +138,35 @@ function App() {
           <p>{desc(filtered.length)}</p>
         </div>
 
-        {filtered.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-state-icon">🎬</div>
-            <p>No movies here yet</p>
+        {loading ? (
+          <div className="loading-state">
+            <div className="spinner" />
+            <p>Loading movies...</p>
           </div>
-        ) : (
-          <div className="movies-grid">
-            {filtered.map((movie) => (
-              <MovieCard
-                key={movie.id}
-                movie={movie}
-                setStatus={setStatus}
-                currentStatus={movieStatus[movie.id]}
-                toggleTop={toggleTop}
-                isTop={topFavorites.some((m) => m.id === movie.id)}
-                onSelect={setSelectedMovie}
-              />
-            ))}
-          </div>
-        )}
+        ) : error ? (
+          <div className="error-state">
+          <p>{error}</p>
+          <button className="btn-search" onClick={handleReset}>Try again</button>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="empty-state">
+          <p>No movies here yet</p>
+        </div>
+      ) : (
+        <div className="movies-grid">
+          {filtered.map((movie) => (
+            <MovieCard
+              key={movie.id}
+              movie={movie}
+              setStatus={setStatus}
+              currentStatus={movieStatus[movie.id]}
+              toggleTop={toggleTop}
+              isTop={topFavorites.some((m) => m.id === movie.id)}
+              onSelect={setSelectedMovie}
+            />
+        ))}
+      </div>
+    )}
       </main>
 
       {selectedMovie && (
